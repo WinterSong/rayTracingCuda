@@ -8,8 +8,8 @@
 #define HEIGHT 1600
 #define BLOCK 256
 #define MAX_N_OBJECT 10
-#define MIN_THRES 1e-5
-#define MAX_REPEAT 5
+#define MIN_THRES 1e-8
+#define MAX_REPEAT 2
 #define AmbientColor make_float3(0.8,0.8,0.8)
 
 /* math operations */
@@ -370,19 +370,19 @@ struct Scene{
     3,// #Triangle
     2,// #LightSource
     {
-        makeSphere(make_float3(0,0,-10),5,0,make_float3(0.5,0.5,0.5),make_float3(0.1,0.25,0.0),make_float3(1.0,0.0,1.0),0.0,4.0),
-        makeSphere(make_float3(-12,0,-10),5,0,make_float3(0.5,0.5,0.5),make_float3(0.1,0.25,0.0),make_float3(1.0,0.0,1.0),0.0,4.0),
+        makeSphere(make_float3(0,0,-10),5,0,make_float3(0.5,0.5,0.5),make_float3(0.1,0.25,0.1),make_float3(1.0,1.0,1.0),0.8,4.0),
+        makeSphere(make_float3(-12,0,-10),5,0,make_float3(0.5,0.5,0.5),make_float3(0.1,0.25,0.1),make_float3(1.0,1.0,1.0),0.0,4.0),
     },// array of Sphere
     {
-        makePlane(make_float3(0,1,0), make_float3(0,-10,-10), 1, 1,make_float3(0.5,0.5,0.5),make_float3(0.1,0.25,0.0),make_float3(1.0,0.0,1.0), 0.0, 4.0),
+        makePlane(make_float3(0,1,0), make_float3(0,-10,-10), 1, 1,make_float3(0.5,0.5,0.5),make_float3(0.1,0.25,0.0),make_float3(1.0,1.0,1.0), 0.8, 4.0),
     },// array of Plane
     {
-        makeCylinder(make_float3(10,-10,-20),make_float3(10,10,-20),5,2,make_float3(0.1,0.1,0.1),make_float3(0.1,0.9,0.1),make_float3(0.8,0.0,1.0),0.0,4.0),
+        makeCylinder(make_float3(10,-10,-20),make_float3(10,10,-20),5,2,make_float3(0.1,0.1,0.1),make_float3(1.0,0.1,0.1),make_float3(0.8,0.8,1.0),0.0,4.0),
     },// array of Cylinde
     {
-        makeTriangle(make_float3(10,0,-10),make_float3(5,-10,-10),make_float3(15,-10,-8),0,make_float3(0.1,0.1,0.1),make_float3(0.1,0.9,0.1),make_float3(0.8,0.0,1.0),0.0,4.0),
-        makeTriangle(make_float3(10,0,-10),make_float3(15,-10,-8),make_float3(20,-10,-15),0,make_float3(0.1,0.1,0.1),make_float3(0.1,0.9,0.1),make_float3(0.8,0.0,1.0),0.0,4.0),
-        makeTriangle(make_float3(10,0,-10),make_float3(5,-10,-10),make_float3(20,-10,-15),0,make_float3(0.1,0.1,0.1),make_float3(0.1,0.9,0.1),make_float3(0.8,0.0,1.0),0.0,4.0),
+        makeTriangle(make_float3(10,0,-10),make_float3(5,-10,-10),make_float3(15,-10,-8),0,make_float3(0.1,0.1,0.1),make_float3(0.0,0.0,0.9),make_float3(0.8,0.9,1.0),0.0,4.0),
+        makeTriangle(make_float3(10,0,-10),make_float3(15,-10,-8),make_float3(20,-10,-15),0,make_float3(0.1,0.1,0.1),make_float3(0.0,0.0,0.9),make_float3(0.8,0.9,1.0),0.0,4.0),
+        makeTriangle(make_float3(10,0,-10),make_float3(5,-10,-10),make_float3(20,-10,-15),0,make_float3(0.1,0.1,0.1),make_float3(0.0,0.0,0.9),make_float3(0.8,0.9,1.0),0.0,4.0),
     },// array of Triangle
     {
         makeLightSource(make_float3(20,15,0),make_float3(0.8,0.8,0.8)),
@@ -415,6 +415,8 @@ __device__ float3 computeColor(Ray *ray, IntersectionResult*ir)
         float3 Id = fmaxf(0, dot(ir->normal, l))*(eleProd(ir->Kd, gpuScene.lightSources[lightSrc].color));
         float3 h = normalize(normalize(l)-normalize(ray->direction));
         float3 Is = __powf(fmaxf(0,dot(ir->normal, h)),ir->shininess)*eleProd(ir->Ks,gpuScene.lightSources[lightSrc].color);
+        // Id = make_float3(0,0,0);
+        // Is = make_float3(0,0,0);
         color += (Id+Is);
     }
     return color;
@@ -443,7 +445,7 @@ __device__ inline float3 sample(Ray* ray)
             float3 d = normalize(ray->direction);
             float3 n = normalize(ir.normal);
             float3 newRayE = ray->getPoint(ir.distance);
-            float3 newRayD = normalize(d+2.0*dot(d,n)*n);
+            float3 newRayD = normalize(d-2.0*dot(d,n)*n);
             ray->StartPoint = newRayE;
             ray->direction = newRayD;
         }
